@@ -31,6 +31,8 @@ rr_result *rr(int *queue, int np, int tq)
 
 	// code here to assign values to result->turnarounds, result->order, and result->order_n
 
+	printf("tq: %d\n", tq);
+
 	int time_remaining[np]; //maybe just use queue instead? //or store here for checking against result?
 	int elapsed_time = 0;
 
@@ -41,45 +43,86 @@ rr_result *rr(int *queue, int np, int tq)
 	}
 
 	result->order_n = 0;
-	//result->turnarounds = int[np];
+
+	node *firstNode = malloc(sizeof(node));
+	node *currNode = malloc(sizeof(node));
 
 	bool queue_finished_processing = false;
-	printf("Starting Loop...\n");
+	//printf("Starting Loop...\n");
 	while(!queue_finished_processing)
 	{
+		//printf("\n\nWHILE LOOP BEGINS.\n");
 		for(int i = 0; i < np ; i++) //iterate through queue of burst times
 		{
+			//printf("\nFor loop begins\n");
 			if(queue[i] == 0) //process already completed
 			{
-				printf("Skipping p%d.\n", (i+1));				//skip
+				//printf("Skipping p%d.\n", (i+1));				//skip
 			}
 			else if (0 < queue[i] && queue[i] <= tq) //process completes this round
 			{
+				//printf("p%d completes this round.\n", (i+1));
 				if(start_times[i] == -1) //if start time hasn't been set already
 				{
 					start_times[i] = elapsed_time; //set start time to current elapsed_time
 				}
 
 				elapsed_time += queue[i];
+				//printf("elapsed_time updated to %d\n", elapsed_time);
 				queue[i] = 0;
+				//printf("queue[%d] (time remaining for p%d) updated to %d\n", i, (i+1), queue[i]);
 
-				result->order[result->order_n] = i;
+				if(result->order_n == 0)//first process
+				{
+					firstNode->value = (i+1);
+					currNode = malloc(sizeof(node));
+					firstNode->next = currNode;
+				}
+				else if(result->order_n > 0) //not the first process
+				{
+					currNode->value = (i+1);
+					currNode->next = malloc(sizeof(node));
+					currNode = currNode->next;
+				}
+
 				result->order_n += 1;
+				printf("result->order_n updated to %d\n", result->order_n);
 
 				result->turnarounds[i] = (elapsed_time - start_times[i]);
+				printf("result->turnarounds[%d] set to %d\n", i, (elapsed_time - start_times[i]));
 			}
 			else if (queue[i] > tq) //process will not complete this round
 			{
+				printf("Process p%d has %dms remaining and will not complete this round.\n", (i+1), queue[i]);
 				if(start_times[i] == -1) //if start time hasn't been set already
 				{
+					printf("setting start time to %d\n", elapsed_time);
 					start_times[i] = elapsed_time; //set start time to current elapsed_time
+					printf("start_times[%d] = %d\n", i, start_times[i]);
 				}
 
 				elapsed_time += tq;
+				printf("elapsed_time updated to %d\n", elapsed_time);
 				queue[i] -= tq;
+				printf("queue[%d] (time remaining for p%d) updated to %d\n", i, (i+1), queue[i]);
+
+				//result->order[result->order_n] = (i+1);
+				//printf("result->order\n");
+
+				if(result->order_n == 0)//first process
+				{
+					firstNode->value = (i+1);
+					firstNode->next = currNode;
+				}
+				else if(result->order_n > 0) //not the first process
+				{
+					currNode->value = (i+1);
+					currNode->next = malloc(sizeof(node));
+					currNode = currNode->next;
+				}
 
 				result->order_n += 1;
-				result->order[result->order_n] = i;
+				printf("result->order_n updated to %d\n", result->order_n);
 			}
 		}
 		queue_finished_processing = true; //while loop will end unless a process with time remaining is found.
@@ -88,8 +131,20 @@ rr_result *rr(int *queue, int np, int tq)
 			if(queue[j] > 0)//if any process has time remaining
 			{
 				queue_finished_processing = false; //the while loop continues and round robin does another round.
+				//printf("Time remains on p%d\n", (j+1));
 			}
 		}
 	}
+	printf("\nQueue finished processing.\n");
+
+	result->order = malloc(sizeof(int) * result->order_n);
+	currNode = firstNode;
+	for(int i = 0 ; i < result->order_n ; i++)
+	{
+		(result->order)[i] = currNode->value;
+		printf("result->order[%d] = %d\n", i, currNode->value);
+		currNode = currNode->next;
+	}
+
 	return result;
 }
