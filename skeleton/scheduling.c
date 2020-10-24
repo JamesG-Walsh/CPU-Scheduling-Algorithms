@@ -59,7 +59,7 @@ rr_result *rr(int *queue, int np, int tq)
 			{
 				//printf("Skipping p%d.\n", (i+1));				//skip
 			}
-			else if (0 < queue[i] && queue[i] <= tq) //process completes this round
+			else if (0 < queue[i])//&& queue[i] <= tq)
 			{
 				//printf("p%d completes this round.\n", (i+1));
 				if(start_times[i] == -1) //if start time hasn't been set already
@@ -67,9 +67,18 @@ rr_result *rr(int *queue, int np, int tq)
 					start_times[i] = elapsed_time; //set start time to current elapsed_time
 				}
 
-				elapsed_time += queue[i];
-				//printf("elapsed_time updated to %d\n", elapsed_time);
-				queue[i] = 0;
+
+				if (queue[i] <= tq) //process finishes this round
+				{
+					elapsed_time += queue[i];				//printf("elapsed_time updated to %d\n", elapsed_time);
+					queue[i] = 0;
+					result->turnarounds[i] = (elapsed_time - start_times[i]); //compute turnaround time
+				}
+				else if(queue[i] > tq)
+				{
+					elapsed_time += tq;
+					queue[i] -= tq;
+				}
 				//printf("queue[%d] (time remaining for p%d) updated to %d\n", i, (i+1), queue[i]);
 
 				if(result->order_n == 0)//first process
@@ -87,11 +96,13 @@ rr_result *rr(int *queue, int np, int tq)
 
 				result->order_n += 1;
 				//printf("result->order_n updated to %d\n", result->order_n);
+				if(queue[i] == 0) //if process completes this round
+				{
 
-				result->turnarounds[i] = (elapsed_time - start_times[i]);
+				}
 				//printf("result->turnarounds[%d] set to %d\n", i, (elapsed_time - start_times[i]));
 			}
-			else if (queue[i] > tq) //process will not complete this round
+			/*else if (queue[i] > tq) //process will not complete this round
 			{
 				//printf("Process p%d has %dms remaining and will not complete this round.\n", (i+1), queue[i]);
 				if(start_times[i] == -1) //if start time hasn't been set already
@@ -105,9 +116,6 @@ rr_result *rr(int *queue, int np, int tq)
 				//printf("elapsed_time updated to %d\n", elapsed_time);
 				queue[i] -= tq;
 				//printf("queue[%d] (time remaining for p%d) updated to %d\n", i, (i+1), queue[i]);
-
-				//result->order[result->order_n] = (i+1);
-				//printf("result->order\n");
 
 				if(result->order_n == 0)//first process
 				{
@@ -123,7 +131,7 @@ rr_result *rr(int *queue, int np, int tq)
 
 				result->order_n += 1;
 				//printf("result->order_n updated to %d\n", result->order_n);
-			}
+			}*/
 		}
 		queue_finished_processing = true; //while loop will end unless a process with time remaining is found.
 		for (int j = 0; j < np ; j++)// iterate through queue
