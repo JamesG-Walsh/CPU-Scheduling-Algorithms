@@ -1,3 +1,7 @@
+/*	CS3305A	-			Fall 2020	-	Assignment 4
+		James Walsh	-	jwalsh57	-	250481718
+*/
+
 #include <stdlib.h>
 #include <stdbool.h> //added this myself //TODO ask if this is ok?
 #include <stdio.h> //same here
@@ -24,7 +28,7 @@
 */
 rr_result *rr(int *queue, int np, int tq)
 {
-	//printf("Starting rr method...\n");
+	//printf("Starting rr function...\n");
 	rr_result *result = malloc(sizeof(rr_result));
 	result->np = np;
 	result->turnarounds = malloc(sizeof(int) * np);
@@ -32,8 +36,6 @@ rr_result *rr(int *queue, int np, int tq)
 	// code here to assign values to result->turnarounds, result->order, and result->order_n
 
 	//printf("tq: %d\n", tq);
-
-	int time_remaining[np]; //maybe just use queue instead? //or store here for checking against result?
 	int elapsed_time = 0;
 
 	int start_times[np]; //for calculating turnaround time.  start_times[i] is when pi started processing for the first time.
@@ -42,24 +44,20 @@ rr_result *rr(int *queue, int np, int tq)
 		start_times[i] = -1; //initialize every value of start time to -1 to show that it has not been set yet.
 	}
 
-	result->order_n = 0;
+	result->order_n = 0; //initialize order_n
 
 	node *firstNode = malloc(sizeof(node));
-	node *currNode = malloc(sizeof(node));
+	node *currNode = malloc(sizeof(node)); //initialize 2 pointers to node structures
 
 	bool queue_finished_processing = false;
 	//printf("Starting Loop...\n");
 	while(!queue_finished_processing)
 	{
 		//printf("\n\nWHILE LOOP BEGINS.\n");
-		for(int i = 0; i < np ; i++) //iterate through queue of burst times
+		for(int i = 0; i < np ; i++) //iterate through queue of CPU burst times
 		{
 			//printf("\nFor loop begins\n");
-			if(queue[i] == 0) //process already completed
-			{
-				//printf("Skipping p%d.\n", (i+1));				//skip
-			}
-			else if (0 < queue[i])//&& queue[i] <= tq)
+			if (0 < queue[i])//&& queue[i] <= tq)
 			{
 				//printf("p%d completes this round.\n", (i+1));
 				if(start_times[i] == -1) //if start time hasn't been set already
@@ -67,14 +65,13 @@ rr_result *rr(int *queue, int np, int tq)
 					start_times[i] = elapsed_time; //set start time to current elapsed_time
 				}
 
-
-				if (queue[i] <= tq) //process finishes this round
+				if (0 < queue[i] && queue[i] <= tq) //process finishes this round
 				{
 					elapsed_time += queue[i];				//printf("elapsed_time updated to %d\n", elapsed_time);
 					queue[i] = 0;
 					result->turnarounds[i] = (elapsed_time - start_times[i]); //compute turnaround time
 				}
-				else if(queue[i] > tq)
+				else if(queue[i] > tq) //process is pre-empted and continues next round.
 				{
 					elapsed_time += tq;
 					queue[i] -= tq;
@@ -83,55 +80,21 @@ rr_result *rr(int *queue, int np, int tq)
 
 				if(result->order_n == 0)//first process
 				{
-					firstNode->value = (i+1);
+					firstNode->value = (i+1); // i+1 is used so that my own print statements made sense
 					currNode = malloc(sizeof(node));
-					firstNode->next = currNode;
+					firstNode->next = currNode; //step to next node in linkedlist
 				}
 				else if(result->order_n > 0) //not the first process
 				{
-					currNode->value = (i+1);
+					currNode->value = (i+1); // i+1 is used so that my own print statements made sense
 					currNode->next = malloc(sizeof(node));
-					currNode = currNode->next;
+					currNode = currNode->next;//step to next node in linkedlist
 				}
 
-				result->order_n += 1;
+				result->order_n += 1; //increase the size of order_n by 1
 				//printf("result->order_n updated to %d\n", result->order_n);
-				if(queue[i] == 0) //if process completes this round
-				{
-
-				}
 				//printf("result->turnarounds[%d] set to %d\n", i, (elapsed_time - start_times[i]));
 			}
-			/*else if (queue[i] > tq) //process will not complete this round
-			{
-				//printf("Process p%d has %dms remaining and will not complete this round.\n", (i+1), queue[i]);
-				if(start_times[i] == -1) //if start time hasn't been set already
-				{
-					//printf("setting start time to %d\n", elapsed_time);
-					start_times[i] = elapsed_time; //set start time to current elapsed_time
-					//printf("start_times[%d] = %d\n", i, start_times[i]);
-				}
-
-				elapsed_time += tq;
-				//printf("elapsed_time updated to %d\n", elapsed_time);
-				queue[i] -= tq;
-				//printf("queue[%d] (time remaining for p%d) updated to %d\n", i, (i+1), queue[i]);
-
-				if(result->order_n == 0)//first process
-				{
-					firstNode->value = (i+1);
-					firstNode->next = currNode;
-				}
-				else if(result->order_n > 0) //not the first process
-				{
-					currNode->value = (i+1);
-					currNode->next = malloc(sizeof(node));
-					currNode = currNode->next;
-				}
-
-				result->order_n += 1;
-				//printf("result->order_n updated to %d\n", result->order_n);
-			}*/
 		}
 		queue_finished_processing = true; //while loop will end unless a process with time remaining is found.
 		for (int j = 0; j < np ; j++)// iterate through queue
@@ -145,13 +108,14 @@ rr_result *rr(int *queue, int np, int tq)
 	}
 	//printf("\nQueue finished processing.\n");
 
-	result->order = malloc(sizeof(int) * result->order_n);
-	currNode = firstNode;
-	for(int i = 0 ; i < result->order_n ; i++)
+	//all that remains now is to transfer the values from the linked list to the result->order array.
+	result->order = malloc(sizeof(int) * result->order_n); //allocate memory for order array
+	currNode = firstNode; //start with the firstNode
+	for(int i = 0 ; i < result->order_n ; i++) //iterate through order array
 	{
-		(result->order)[i] = (currNode->value - 1);
+		(result->order)[i] = (currNode->value - 1);  //value assigned to order array has to be reduced by one to match the array index
 		//printf("result->order[%d] = %d\n", i, (currNode->value -1));
-		currNode = currNode->next;
+		currNode = currNode->next; //step to next node in linked list
 	}
 
 	return result;
