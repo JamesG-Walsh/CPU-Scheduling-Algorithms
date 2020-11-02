@@ -36,30 +36,27 @@ rr_result *rr(int *queue, int np, int tq)
 	// code here to assign values to result->turnarounds, result->order, and result->order_n
 
 	//printf("tq: %d\n", tq);
+	result->order_n = 0; //initialize order_n (it will be incremented later)
 	int elapsed_time = 0;
-
 	int start_times[np]; //for calculating turnaround time.  start_times[i] is when pi started processing for the first time.
 	for(int i = 0; i < np; i++)
 	{
 		start_times[i] = -1; //initialize every value of start time to -1 to show that it has not been set yet.
 	}
 
-	result->order_n = 0; //initialize order_n
+	node *firstNode;
+	node *currNode; //initialize 2 pointers to node structures
 
-	node *firstNode = malloc(sizeof(node));
-	node *currNode = malloc(sizeof(node)); //initialize 2 pointers to node structures
-
-	bool queue_finished_processing = false;
+	bool any_process_has_time_remaining = true;
 	//printf("Starting Loop...\n");
-	while(!queue_finished_processing)
+	while(any_process_has_time_remaining)
 	{
 		//printf("\n\nWHILE LOOP BEGINS.\n");
 		for(int i = 0; i < np ; i++) //iterate through queue of CPU burst times
 		{
 			//printf("\nFor loop begins\n");
-			if (0 < queue[i])//&& queue[i] <= tq)
+			if (0 < queue[i])
 			{
-				//printf("p%d completes this round.\n", (i+1));
 				if(start_times[i] == -1) //if start time hasn't been set already
 				{
 					start_times[i] = elapsed_time; //set start time to current elapsed_time
@@ -80,15 +77,16 @@ rr_result *rr(int *queue, int np, int tq)
 
 				if(result->order_n == 0)//first process
 				{
+					firstNode = malloc(sizeof(node));
+					currNode = malloc(sizeof(node));	//allocate memory for first 2 nodes
 					firstNode->value = (i+1); // i+1 is used so that my own print statements made sense
-					currNode = malloc(sizeof(node));
 					firstNode->next = currNode; //step to next node in linkedlist
 				}
 				else if(result->order_n > 0) //not the first process
 				{
 					currNode->value = (i+1); // i+1 is used so that my own print statements made sense
-					currNode->next = malloc(sizeof(node));
-					currNode = currNode->next;//step to next node in linkedlist
+					currNode->next = malloc(sizeof(node)); //dynamically allocate memory as the linked list grows
+					currNode = currNode->next;//step to next node in linked list
 				}
 
 				result->order_n += 1; //increase the size of order_n by 1
@@ -96,12 +94,12 @@ rr_result *rr(int *queue, int np, int tq)
 				//printf("result->turnarounds[%d] set to %d\n", i, (elapsed_time - start_times[i]));
 			}
 		}
-		queue_finished_processing = true; //while loop will end unless a process with time remaining is found.
-		for (int j = 0; j < np ; j++)// iterate through queue
+		any_process_has_time_remaining = false; //while loop will end unless a process with time remaining is found.
+		for (int j = 0; j < np && !any_process_has_time_remaining ; j++)// iterate through queue
 		{
 			if(queue[j] > 0)//if any process has time remaining
 			{
-				queue_finished_processing = false; //the while loop continues and round robin does another round.
+				any_process_has_time_remaining = true; //the while loop continues and round robin does another round.
 				//printf("Time remains on p%d\n", (j+1));
 			}
 		}
@@ -111,12 +109,16 @@ rr_result *rr(int *queue, int np, int tq)
 	//all that remains now is to transfer the values from the linked list to the result->order array.
 	result->order = malloc(sizeof(int) * result->order_n); //allocate memory for order array
 	currNode = firstNode; //start with the firstNode
+	node *prevNode;
 	for(int i = 0 ; i < result->order_n ; i++) //iterate through order array
 	{
 		(result->order)[i] = (currNode->value - 1);  //value assigned to order array has to be reduced by one to match the array index
 		//printf("result->order[%d] = %d\n", i, (currNode->value -1));
+		prevNode = currNode;
 		currNode = currNode->next; //step to next node in linked list
+		free(prevNode); //The node structures aren't being returned and aren't needed any longer so their dynamically allocated memory can be deallocated
 	}
+	free(currNode);
 
 	return result;
 }
