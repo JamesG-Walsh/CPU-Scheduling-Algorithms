@@ -57,7 +57,7 @@ int read_input_file(char *filename, input_queues *inp)
 	int p;
 
 	int i = 0;
-	while (nread = getline(&buffer, &len, fp) != -1)
+	while ((nread = getline(&buffer, &len, fp)) != -1)
 	{
 		p = num_p(buffer);
 		queues[i++] = malloc(sizeof(int) * p);

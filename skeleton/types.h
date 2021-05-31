@@ -3,7 +3,7 @@
 
 typedef struct input_queues
 {
-	int nq;
+	int nq; //number of queues (lines in input file)
 	int **queues;
 	int *np;
 	int *tq;
