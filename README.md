@@ -1,6 +1,7 @@
 # CPU Scheduling Algorithms
 
-CS3305A Operating Systems - Assignment 4 
+CS3305A Operating Systems - Assignment 4
+
 Simulates a round robin CPU scheduling algorithm.
 
 ## Usage
