@@ -126,3 +126,4 @@ dmypy.json
 .DS_Store
 skeleton/cpu_scheduling_output_file.txt
 skeleton/a4
+.DS_Store
